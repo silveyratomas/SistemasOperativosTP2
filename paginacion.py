@@ -50,6 +50,7 @@ def mover_a_ejecutando():
                     proceso.tiene_recurso = True
                     procesos_ocupando_recurso[proceso.recurso] = proceso.id
                     actualizar_interfaz()
+                    time.sleep(1)
                 else:
                     # Si no puede adquirir el recurso, va a bloqueado
                     proceso.estado = 'Bloqueado'
@@ -75,7 +76,7 @@ def mover_a_ejecutando():
             proceso_ejecucion = None
             actualizar_interfaz()
 
-        time.sleep(1)
+        time.sleep(2)
 
 # Función para revisar procesos bloqueados y moverlos a Listo cuando corresponda
 def revisar_procesos_bloqueados():
@@ -83,7 +84,7 @@ def revisar_procesos_bloqueados():
         for proceso in procesos_bloqueados[:]:
             if proceso.tiene_recurso:
                 # Si el proceso tiene un recurso, pasa a Listo después de 3 segundos
-                time.sleep(1)  # Esperar 3 segundos
+                time.sleep(3)  # Esperar 3 segundos
                 proceso.estado = 'Listo'
                 procesos_bloqueados.remove(proceso)
                 procesos_listos.append(proceso)
@@ -137,14 +138,9 @@ def liberar_paginas(proceso):
 # Función para agregar un proceso
 def agregar_proceso(memoria_necesaria):
     proceso = Proceso(len(procesos) + 1, memoria_necesaria)
-
-    if asignar_paginas(proceso):
-        procesos_nuevos.append(proceso)
-        proceso.estado = 'Nuevos'
-        procesos.append(proceso)
-    else:
-        mensaje_error.config(text="Memoria insuficiente para el nuevo proceso.")
-
+    procesos_nuevos.append(proceso)
+    proceso.estado = 'Listos'
+    procesos.append(proceso)
     actualizar_interfaz()
 
 # Función para mover procesos de Nuevos a Listos
@@ -157,40 +153,6 @@ def nuevo_a_listo():
                 proceso.estado = 'Listo'
                 actualizar_interfaz()
         time.sleep(3)
-
-# Función que ejecuta los procesos
-def ejecutar_procesos():
-    global proceso_ejecucion
-    while True:
-        if procesos_listos:
-            proceso = procesos_listos.pop(0)
-            proceso_ejecucion = proceso
-            proceso.estado = 'Ejecutando'
-            actualizar_interfaz()
-
-            # Intentar obtener el recurso
-            recurso_id = proceso.recurso
-            if recursos_semaforos[recurso_id].acquire(blocking=False):
-                procesos_ocupando_recurso[recurso_id] = proceso.id
-                proceso.tiene_recurso = True
-                actualizar_interfaz()
-
-                # Simular que el proceso está en ejecución
-                time.sleep(3)
-
-                # Terminar el proceso
-                proceso.estado = 'Terminado'
-                liberar_paginas(proceso)
-                procesos_terminados.append(proceso)
-                procesos_ocupando_recurso[recurso_id] = None
-                recursos_semaforos[recurso_id].release()  # Liberar el recurso
-                proceso.tiene_recurso = False
-            else:
-                # Si no pudo obtener el recurso, se va a bloqueado
-                proceso.estado = 'Bloqueado'
-                procesos_bloqueados.append(proceso)
-                actualizar_interfaz()
-        time.sleep(2)
 
 # Función para agregar un proceso manualmente
 def agregar_proceso_manual():
