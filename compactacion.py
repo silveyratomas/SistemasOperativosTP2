@@ -20,7 +20,7 @@ recursos_semaforos = [threading.Semaphore(1), threading.Semaphore(1), threading.
 procesos_ocupando_recurso = [None, None, None]  # Lista para rastrear qué proceso tiene cada recurso
 proceso_ejecucion = None
 
-# Clase para representar un proceso (modificada)
+# Clase para representar un proceso
 class Proceso:
     def __init__(self, id, memoria):
         self.id = id
@@ -34,7 +34,7 @@ class Proceso:
     def __str__(self):
         return f"P{self.id}: ({self.memoria} MB) Recurso: R{self.recurso}"
 
-# Función para mover un proceso de Listo a Ejecutando (modificada)
+# Función para mover un proceso de Listo a Ejecutando
 def mover_a_ejecutando():
     global proceso_ejecucion
     while True:
@@ -82,7 +82,7 @@ def revisar_procesos_bloqueados():
         for proceso in procesos_bloqueados[:]:
             if proceso.tiene_recurso:
                 # Si el proceso tiene un recurso, pasa a Listo después de 3 segundos
-                time.sleep(3)  # Esperar 3 segundos
+                time.sleep(1)  # Esperar 3 segundos
                 proceso.estado = 'Listo'
                 procesos_bloqueados.remove(proceso)
                 procesos_listos.append(proceso)
@@ -98,7 +98,7 @@ def revisar_procesos_bloqueados():
                     actualizar_interfaz()
         time.sleep(2)
 
-# Función de compactación de memoria (nueva)
+# Función de compactación de memoria
 def compactar_memoria():
     # Crear una nueva lista para la memoria compactada
     memoria_compactada = [pagina for pagina in paginas_memoria if pagina is not None]
@@ -113,17 +113,17 @@ def compactar_memoria():
     # Actualizar la interfaz gráfica después de compactar
     actualizar_interfaz()
 
-
-# Función para liberar las páginas asignadas a un proceso (modificada para compactación)
+# Función para liberar las páginas asignadas a un proceso
 def liberar_paginas(proceso):
     global MEMORIA_USADA
     for pagina in proceso.paginas:
         paginas_memoria[pagina] = None
         MEMORIA_USADA -= TAMANO_PAGINA
     proceso.paginas = []
+    actualizar_interfaz()
     compactar_memoria()  # Llamar a la compactación cada vez que se libera memoria
 
-# Función para asignar páginas a un proceso en la memoria (modificada para compactación)
+# Función para asignar páginas a un proceso en la memoria
 def asignar_paginas(proceso):
     global MEMORIA_USADA
     compactar_memoria()  # Asegurar que la memoria está compactada antes de asignar
@@ -153,14 +153,9 @@ def liberar_recurso(proceso):
 # Función para agregar un proceso
 def agregar_proceso(memoria_necesaria):
     proceso = Proceso(len(procesos) + 1, memoria_necesaria)
-
-    if asignar_paginas(proceso):
-        procesos_nuevos.append(proceso)
-        proceso.estado = 'Nuevos'
-        procesos.append(proceso)
-    else:
-        mensaje_error.config(text="Memoria insuficiente para el nuevo proceso.")
-
+    procesos_nuevos.append(proceso)
+    proceso.estado = 'Listos'
+    procesos.append(proceso)
     actualizar_interfaz()
 
 # Función para mover procesos de Nuevos a Listos
@@ -173,40 +168,6 @@ def nuevo_a_listo():
                 proceso.estado = 'Listo'
                 actualizar_interfaz()
         time.sleep(3)
-
-# Función que ejecuta los procesos
-def ejecutar_procesos():
-    global proceso_ejecucion
-    while True:
-        if procesos_listos:
-            proceso = procesos_listos.pop(0)
-            proceso_ejecucion = proceso
-            proceso.estado = 'Ejecutando'
-            actualizar_interfaz()
-
-            # Intentar obtener el recurso
-            recurso_id = proceso.recurso
-            if recursos_semaforos[recurso_id].acquire(blocking=False):
-                procesos_ocupando_recurso[recurso_id] = proceso.id
-                proceso.tiene_recurso = True
-                actualizar_interfaz()
-
-                # Simular que el proceso está en ejecución
-                time.sleep(3)
-
-                # Terminar el proceso
-                proceso.estado = 'Terminado'
-                liberar_paginas(proceso)
-                procesos_terminados.append(proceso)
-                procesos_ocupando_recurso[recurso_id] = None
-                recursos_semaforos[recurso_id].release()  # Liberar el recurso
-                proceso.tiene_recurso = False
-            else:
-                # Si no pudo obtener el recurso, se va a bloqueado
-                proceso.estado = 'Bloqueado'
-                procesos_bloqueados.append(proceso)
-                actualizar_interfaz()
-        time.sleep(2)
 
 # Función para agregar un proceso manualmente
 def agregar_proceso_manual():
@@ -256,7 +217,7 @@ def actualizar_interfaz():
     # Actualizar estado de los recursos
     actualizar_estado_recursos()
 
-# Función para mostrar visualmente el uso de la memoria (modificada para compactación)
+# Función para mostrar visualmente el uso de la memoria
 def mostrar_procesos_en_memoria():
     canvas.delete("all")  # Limpiar el canvas
 
@@ -271,8 +232,6 @@ def mostrar_procesos_en_memoria():
             canvas.create_text((x0 + 25, y0 + 25), text=paginas_memoria[i])
         else:
             canvas.create_rectangle(x0, y0, x1, y1, outline="black")
-
-    # Esto asegura que tras la liberación de páginas y compactación, la interfaz gráfica se reorganiza correctamente
 
 # Función para actualizar el estado de los recursos
 def actualizar_estado_recursos():
@@ -291,6 +250,7 @@ memoria_label.pack()
 canvas = tk.Canvas(ventana, width=500, height=300, bg="white")
 canvas.pack()
 
+# Configuración de listas para los estados de los procesos
 nuevos_frame = tk.Frame(ventana)
 nuevos_frame.pack(side=tk.LEFT, padx=10)
 nuevos_label = tk.Label(nuevos_frame, text="Nuevos")
