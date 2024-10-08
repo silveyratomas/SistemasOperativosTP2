@@ -51,12 +51,6 @@ def mover_a_ejecutando():
                     procesos_ocupando_recurso[proceso.recurso] = proceso.id
                     actualizar_interfaz()
                     time.sleep(1)
-                else:
-                    # Si no puede adquirir el recurso, va a bloqueado
-                    proceso.estado = 'Bloqueado'
-                    procesos_bloqueados.append(proceso)
-                    proceso_ejecucion = None
-                    continue  # Volver a la espera de un nuevo proceso para ejecutar
 
             # Simular la ejecución
             time.sleep(2)  # Simulación del tiempo de ejecución
