@@ -83,7 +83,7 @@ def revisar_procesos_bloqueados():
         for proceso in procesos_bloqueados[:]:
             if proceso.tiene_recurso:
                 # Si el proceso tiene un recurso, pasa a Listo después de 3 segundos
-                time.sleep(3)  # Esperar 3 segundos
+                time.sleep(1)  # Esperar 3 segundos
                 proceso.estado = 'Listo'
                 procesos_bloqueados.remove(proceso)
                 procesos_listos.append(proceso)
