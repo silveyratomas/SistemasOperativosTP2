@@ -32,7 +32,7 @@ class Proceso:
         self.tiene_recurso = False
 
     def __str__(self):
-        return f"Proceso {self.id}: {self.estado} (Memoria: {self.memoria} MB) Recurso: R{self.recurso}"
+        return f"P{self.id}: ({self.memoria} MB) Recurso: R{self.recurso}"
 
 # Función para mover un proceso de Listo a Ejecutando
 def mover_a_ejecutando():
@@ -163,6 +163,7 @@ def agregar_proceso_aleatorio():
 # Función para actualizar la interfaz gráfica
 def actualizar_interfaz():
     memoria_label.config(text=f"Memoria Usada: {MEMORIA_USADA}/{MEMORIA_TOTAL} MB")
+    ejecucion_label.config(text=f"Ejecutando: {proceso_ejecucion if proceso_ejecucion else 'Ninguno'}")
 
     # Limpiar y actualizar lista de procesos
     nuevos_listbox.delete(0, tk.END)
@@ -181,7 +182,6 @@ def actualizar_interfaz():
     for p in procesos_terminados:
         terminados_listbox.insert(tk.END, str(p))
 
-    ejecucion_label.config(text=f"{proceso_ejecucion if proceso_ejecucion else ''}")
     mensaje_error.config(text="")
 
     # Mostrar procesos en memoria
@@ -205,88 +205,110 @@ def mostrar_procesos_en_memoria():
             # Obtener el color basado en el ID del proceso
             color = colores_procesos[paginas_memoria[i] % len(colores_procesos)]
             canvas.create_rectangle(x0, y0, x1, y1, fill=color)
-            canvas.create_text((x0 + 2.5, y0 + 50), text=paginas_memoria[i], anchor='center')  # Ajustar el texto centrado
+            canvas.create_text((x0 + 2.5, y0 + 50), text=f"P{paginas_memoria[i]}", anchor='center', font=("Arial", 8))  # Ajustar el texto centrado
         else:
             canvas.create_rectangle(x0, y0, x1, y1, outline="black")
-
 
 
 # Función para actualizar el estado de los recursos
 def actualizar_estado_recursos():
     for i, recurso in enumerate(["R0", "R1", "R2"]):
-        estado = f"{recurso}: {'Libre' if procesos_ocupando_recurso[i] is None else f'Ocupado por P{procesos_ocupando_recurso[i]}'}"
-        recurso_labels[i].config(text=estado)
+        estado = f"{recurso}: {'Libre' if procesos_ocupando_recurso[i] is None else f'Ocupado por P{procesos_ocupando_recurso[i]}' }"
+        estado_recursos_label[i].config(text=estado)
 
 # Configuración de la interfaz gráfica
-ventana = tk.Tk()
-ventana.title("Simulación de Procesos y Memoria")
-ventana.config(bg="#E8F4F8")
+root = tk.Tk()
+root.title("Simulador de Gestión de Procesos y Memoria (PAGINACIÓN)")
 
-# Widgets de memoria y procesos
-memoria_label = tk.Label(ventana, text=f"Memoria Usada: {MEMORIA_USADA}/{MEMORIA_TOTAL} MB", 
-                         font=("Arial", 12, "bold"), bg="#E8F4F8", fg="#333")
-memoria_label.pack(pady=10)
+# Frame principal
+frame_principal = tk.Frame(root)
+frame_principal.pack(padx=10, pady=10)
 
-canvas = tk.Canvas(ventana, width=800, height=100, bg="white", highlightthickness=2, highlightbackground="#666")
-canvas.pack(pady=10)
+# Sección de memoria usada
+memoria_label = tk.Label(frame_principal, text=f"Memoria Usada: {MEMORIA_USADA}/{MEMORIA_TOTAL} MB", font=("Arial", 14))
+memoria_label.pack()
 
-# Configuración de listas para los estados de los procesos (centrados y con colores)
-nuevos_frame = tk.Frame(ventana, bg="#E8F4F8")
-nuevos_frame.pack(side=tk.LEFT, padx=10, pady=10)
-nuevos_label = tk.Label(nuevos_frame, text="Nuevos", font=("Arial", 10, "bold"), bg="#E8F4F8", fg="#005A9C")
+# Frame para el canvas de memoria
+canvas_frame = tk.Frame(frame_principal)
+canvas_frame.pack(pady=10)
+
+canvas = tk.Canvas(canvas_frame, width=500, height=100, bg="white")
+canvas.pack()
+
+# Sección de ejecución
+ejecucion_label = tk.Label(frame_principal, text=f"Ejecutando: Ninguno", font=("Arial", 14))
+ejecucion_label.pack()
+
+#//
+# Frame para la entrada de memoria y botones
+control_frame = tk.Frame(frame_principal)
+control_frame.pack(pady=10)
+
+memoria_entry = tk.Entry(control_frame)
+memoria_entry.pack(side=tk.LEFT, padx=(0, 5))
+
+agregar_btn = tk.Button(control_frame, text="Agregar Proceso", command=agregar_proceso_manual)
+agregar_btn.pack(side=tk.LEFT, padx=(5, 0))
+
+agregar_aleatorio_btn = tk.Button(control_frame, text="Agregar Proceso Aleatorio", command=agregar_proceso_aleatorio)
+agregar_aleatorio_btn.pack(side=tk.LEFT, padx=(5, 0))
+#//
+
+
+# Listas de procesos
+nuevos_frame = tk.Frame(frame_principal)
+nuevos_frame.pack(side=tk.LEFT, padx=(10, 5))
+
+listos_frame = tk.Frame(frame_principal)
+listos_frame.pack(side=tk.LEFT, padx=(5, 5))
+
+bloqueados_frame = tk.Frame(frame_principal)
+bloqueados_frame.pack(side=tk.LEFT, padx=(5, 5))
+
+terminados_frame = tk.Frame(frame_principal)
+terminados_frame.pack(side=tk.LEFT, padx=(5, 10))
+
+nuevos_label = tk.Label(nuevos_frame, text="Procesos Nuevos", font=("Arial", 12))
 nuevos_label.pack()
-nuevos_listbox = tk.Listbox(nuevos_frame, width=30, height=10, bg="#F0FFFF", font=("Arial", 10))
+nuevos_listbox = tk.Listbox(nuevos_frame, width=30, height=10)
 nuevos_listbox.pack()
 
-listos_frame = tk.Frame(ventana, bg="#E8F4F8")
-listos_frame.pack(side=tk.LEFT, padx=10, pady=10)
-listos_label = tk.Label(listos_frame, text="Listos", font=("Arial", 10, "bold"), bg="#E8F4F8", fg="#005A9C")
+listos_label = tk.Label(listos_frame, text="Procesos Listos", font=("Arial", 12))
 listos_label.pack()
-listos_listbox = tk.Listbox(listos_frame, width=30, height=10, bg="#F0FFFF", font=("Arial", 10))
+listos_listbox = tk.Listbox(listos_frame, width=30, height=10)
 listos_listbox.pack()
 
-bloqueados_frame = tk.Frame(ventana, bg="#E8F4F8")
-bloqueados_frame.pack(side=tk.LEFT, padx=10, pady=10)
-bloqueados_label = tk.Label(bloqueados_frame, text="Bloqueados", font=("Arial", 10, "bold"), bg="#E8F4F8", fg="#005A9C")
+bloqueados_label = tk.Label(bloqueados_frame, text="Procesos Bloqueados", font=("Arial", 12))
 bloqueados_label.pack()
-bloqueados_listbox = tk.Listbox(bloqueados_frame, width=30, height=10, bg="#F0FFFF", font=("Arial", 10))
+bloqueados_listbox = tk.Listbox(bloqueados_frame, width=30, height=10)
 bloqueados_listbox.pack()
 
-terminados_frame = tk.Frame(ventana, bg="#E8F4F8")
-terminados_frame.pack(side=tk.LEFT, padx=10, pady=10)
-terminados_label = tk.Label(terminados_frame, text="Terminados", font=("Arial", 10, "bold"), bg="#E8F4F8", fg="#005A9C")
+terminados_label = tk.Label(terminados_frame, text="Procesos Terminados", font=("Arial", 12))
 terminados_label.pack()
-terminados_listbox = tk.Listbox(terminados_frame, width=30, height=10, bg="#F0FFFF", font=("Arial", 10))
+terminados_listbox = tk.Listbox(terminados_frame, width=30, height=10)
 terminados_listbox.pack()
 
-# Entrada y botones para agregar procesos
-memoria_entry = tk.Entry(ventana, font=("Arial", 10), justify='center', bg="#FFF")
-memoria_entry.pack(pady=10)
-agregar_manual_button = tk.Button(ventana, text="Agregar Proceso Manual", command=agregar_proceso_manual, 
-                                  bg="#00A3E0", fg="white", font=("Arial", 10, "bold"))
-agregar_manual_button.pack(pady=5)
+# Frame para los recursos
+recursos_frame = tk.Frame(frame_principal)
+recursos_frame.pack(pady=10)
 
-agregar_aleatorio_button = tk.Button(ventana, text="Agregar Proceso Aleatorio", command=agregar_proceso_aleatorio, 
-                                     bg="#00A3E0", fg="white", font=("Arial", 10, "bold"))
-agregar_aleatorio_button.pack(pady=5)
+estado_recursos_label = tk.Label(recursos_frame, text="Estado de Recursos", font=("Arial", 12))
+estado_recursos_label.pack()
 
-# Estado de ejecución y mensajes
-ejecucion_label = tk.Label(ventana, text="", font=("Arial", 12, "italic"), bg="#E8F4F8", fg="#333")
-ejecucion_label.pack(pady=10)
-mensaje_error = tk.Label(ventana, text="", fg="red", bg="#E8F4F8", font=("Arial", 10, "bold"))
+estado_recursos_label = []
+for i in range(3):
+    estado_label = tk.Label(recursos_frame, text=f"R{i}: Libre", font=("Arial", 12))
+    estado_label.pack()
+    estado_recursos_label.append(estado_label)
+
+# Mensaje de error
+mensaje_error = tk.Label(frame_principal, text="", fg="red", font=("Arial", 10))
 mensaje_error.pack()
 
-# Estado de los recursos
-recurso_labels = []
-for i in range(3):
-    label = tk.Label(ventana, text=f"R{i}: Libre", font=("Arial", 10, "bold"), bg="#E8F4F8", fg="#333")
-    label.pack()
-    recurso_labels.append(label)
-
-# Iniciar los hilos para simular los procesos
+# Hilos para el manejo de procesos
 threading.Thread(target=nuevo_a_listo, daemon=True).start()
-threading.Thread(target=revisar_procesos_bloqueados, daemon=True).start()
 threading.Thread(target=mover_a_ejecutando, daemon=True).start()
+threading.Thread(target=revisar_procesos_bloqueados, daemon=True).start()
 
-# Ejecutar la ventana de la interfaz gráfica
-ventana.mainloop()
+# Iniciar la interfaz gráfica
+root.mainloop()
