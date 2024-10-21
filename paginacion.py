@@ -2,6 +2,8 @@ import tkinter as tk
 import random
 import threading
 import time
+from tkinter import ttk
+
 
 # Configuración de la memoria
 MEMORIA_TOTAL = 1000  # Memoria total disponible (en MB)
@@ -190,12 +192,33 @@ def actualizar_interfaz():
     # Actualizar estado de los recursos
     actualizar_estado_recursos()
 
+    #Actualizar tabla de paginacion
+    actualizar_tabla_paginacion()
+
+
+def actualizar_tabla_paginacion():
+    # Limpiar la tabla antes de actualizarla
+    for item in tabla_paginacion.get_children():
+        tabla_paginacion.delete(item)
+    
+    # Añadir las filas con la información de la paginación
+    for marco, proceso_id in enumerate(paginas_memoria):
+        if proceso_id is not None:
+            tabla_paginacion.insert("", "end", values=(marco, marco, proceso_id))
+
+
+# Función para mostrar visualmente el uso de la memoria
+# Función para mostrar visualmente el uso de la memoria
+# Función para mostrar visualmente el uso de la memoria
 # Función para mostrar visualmente el uso de la memoria
 def mostrar_procesos_en_memoria():
     canvas.delete("all")  # Limpiar el canvas
 
     ancho_columna = 5  # Ancho de las columnas
     colores_procesos = ["lightblue", "lightgreen", "lightcoral", "lightyellow", "lightpink"]  # Lista de colores
+
+    # Variables para mantener el seguimiento de los procesos ya dibujados
+    procesos_dibujados = set()
 
     for i in range(NUMERO_PAGINAS):
         x0, y0 = (i * ancho_columna), 0  # Cada página se dibuja en la posición correspondiente
@@ -205,9 +228,37 @@ def mostrar_procesos_en_memoria():
             # Obtener el color basado en el ID del proceso
             color = colores_procesos[paginas_memoria[i] % len(colores_procesos)]
             canvas.create_rectangle(x0, y0, x1, y1, fill=color)
-            canvas.create_text((x0 + 2.5, y0 + 50), text=f"P{paginas_memoria[i]}", anchor='center', font=("Arial", 8))  # Ajustar el texto centrado
+
+    # Dibuja la línea fina debajo del rectángulo grande
+    y_fino0 = 110
+    y_fino1 = 115  # Ancho muy fino de 5 píxeles
+
+    i = 0
+    while i < NUMERO_PAGINAS:
+        if paginas_memoria[i]:
+            proceso_id = paginas_memoria[i]
+            if proceso_id not in procesos_dibujados:
+                procesos_dibujados.add(proceso_id)
+
+                # Encuentra el rango de páginas ocupadas por el mismo proceso
+                inicio = i
+                while i < NUMERO_PAGINAS and paginas_memoria[i] == proceso_id:
+                    i += 1
+                fin = i
+
+                # Dibujar el rectángulo para toda la sección del proceso
+                x0, x1 = (inicio * ancho_columna), (fin * ancho_columna)
+                color = colores_procesos[proceso_id % len(colores_procesos)]
+                canvas.create_rectangle(x0, y_fino0, x1, y_fino1, fill=color, outline=color)  # Sin divisiones visibles
+
+                # Dibujar el número del proceso centrado
+                canvas.create_text((x0 + (x1 - x0) / 2, (y_fino0 + y_fino1) / 2), text=f"P{proceso_id}", anchor='center', font=("Arial", 8))
+
         else:
-            canvas.create_rectangle(x0, y0, x1, y1, outline="black")
+            i += 1  # Si no hay proceso en esa página, avanzar
+
+
+
 
 
 # Función para actualizar el estado de los recursos
@@ -232,7 +283,7 @@ memoria_label.pack()
 canvas_frame = tk.Frame(frame_principal)
 canvas_frame.pack(pady=10)
 
-canvas = tk.Canvas(canvas_frame, width=500, height=100, bg="white")
+canvas = tk.Canvas(canvas_frame, width=500, height=125, bg="white")
 canvas.pack()
 
 # Sección de ejecución
@@ -304,6 +355,14 @@ for i in range(3):
 # Mensaje de error
 mensaje_error = tk.Label(frame_principal, text="", fg="red", font=("Arial", 10))
 mensaje_error.pack()
+
+# Crear el Treeview para la tabla de paginación
+tabla_paginacion = ttk.Treeview(root, columns=("Pagina", "Marco", "Proceso"), show="headings", height=10)
+tabla_paginacion.heading("Pagina", text="Página")
+tabla_paginacion.heading("Marco", text="Marco de Memoria")
+tabla_paginacion.heading("Proceso", text="ID del Proceso")
+tabla_paginacion.pack()
+
 
 # Hilos para el manejo de procesos
 threading.Thread(target=nuevo_a_listo, daemon=True).start()
